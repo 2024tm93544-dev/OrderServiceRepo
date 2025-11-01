@@ -17,7 +17,7 @@ spec:
           image: orderservice-orderservice:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 8000
+            - containerPort: 8001   # <-- changed from 8000 to 8001
           env:
             - name: DB_NAME
               value: ordersdb
@@ -29,6 +29,14 @@ spec:
               value: postgres
             - name: DB_PORT
               value: "5432"
+          resources:               # <-- added this block
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "250m"
+              memory: "512Mi"
+
 ---
 apiVersion: v1
 kind: Service
@@ -39,6 +47,6 @@ spec:
   selector:
     app: orderservice
   ports:
-    - port: 8000
-      targetPort: 8000
-      nodePort: 30081  # This maps http://localhost:8001
+    - port: 8001          # <-- changed from 8000
+      targetPort: 8001
+      nodePort: 30081     # http://localhost:8001
