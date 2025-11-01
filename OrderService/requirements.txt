@@ -1,0 +1,26 @@
+# --- Django & REST Framework dependencies ---
+Django>=5.0
+djangorestframework>=3.15
+
+# --- Database driver for PostgreSQL ---
+psycopg2-binary
+
+# --- Environment variable support ---
+python-dotenv
+
+# --- API documentation ---
+drf-yasg>=1.21.6
+
+# --- HTTP requests ---
+requests
+
+# --- JWT Authentication ---
+PyJWT>=2.8.0
+djangorestframework-simplejwt>=5.3.1
+
+# --- Prometheus metrics for Django ---
+# Allows exposing /metrics endpoint for Prometheus to scrape
+django-prometheus
+
+gunicorn
+

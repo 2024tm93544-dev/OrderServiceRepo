@@ -1,0 +1,46 @@
+# Python cache and bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Django static/media
+staticfiles/
+media/
+
+# Database / logs
+*.db
+*.sqlite3
+*.log
+pgdata/
+
+# Environment & credentials
+.env
+
+# IDE / editor settings
+.vscode/
+.idea/
+
+# Python packaging / builds
+build/
+dist/
+*.egg-info/
+
+# pytest / coverage
+.coverage
+htmlcov/
+*.pytest_cache/
+
+# Docker / Kubernetes artifacts
+*.pid
+*.tar
+*.bak
+*.tmp
+
+# macOS / Windows temp files
+.DS_Store
+Thumbs.db

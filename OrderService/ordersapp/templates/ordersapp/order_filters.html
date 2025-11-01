@@ -1,0 +1,75 @@
+{% load static %}
+
+<form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-3 w-100" id="order-filters-form">
+
+    <!-- Search -->
+    <div class="form-floating" style="width: 180px;">
+        <input type="text" name="search" id="searchInput" class="form-control" value="{{ search }}">
+        <label for="searchInput">Search</label>
+    </div>
+
+    <!--Order Status -->
+    <div class="form-floating" style="width: 150px;">
+        <select name="status_filter" id="statusFilter" class="form-select">
+            <option value=""></option>
+            {% for s in all_order_statuses %}
+            <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+        <label for="statusFilter">Order Status</label>
+    </div>
+
+    <!-- Payment Status-->
+    <div class="form-floating" style="width: 150px;">
+        <select name="payment_filter" id="paymentFilter" class="form-select">
+            <option value=""></option>
+            {% for p in all_payment_statuses %}
+            <option value="{{ p }}" {% if payment_filter == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+        </select>
+        <label for="paymentFilter">Payment Status</label>
+    </div>
+
+    <!-- Shipping Status -->
+    <div class="form-floating" style="width: 150px;">
+        <select name="shipping_filter" id="shippingFilter" class="form-select">
+            <option value=""></option>
+            {% for s in all_shipping_statuses %}
+            <option value="{{ s }}" {% if shipping_filter == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+        <label for="shippingFilter">Shipping Status</label>
+    </div>
+
+    <!-- Sort By -->
+    <div class="form-floating" style="width: 150px;">
+        <select name="sort_by" id="sortBy" class="form-select">
+            <option value=""></option>
+            {% for s in all_sort_by_options %}
+            <option value="{{ s }}" {% if sort_by == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+        <label for="sortBy">Sort By</label>
+    </div>
+
+    <!-- Direction -->
+    <div class="form-floating" style="width: 150px;">
+        <select name="sort_dir" id="sortDir" class="form-select">
+            <option value=""></option>
+            {% for d in all_sort_directions %}
+            <option value="{{ d }}" {% if sort_dir == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+        <label for="sortDir">Direction</label>
+    </div>
+
+    <!-- Apply and Clear Buttons  -->
+    <div class="d-flex align-items-center gap-2">
+        <button type="submit" class="btn btn-primary">
+            Apply Filter <i class="bi bi-funnel"></i> 
+        </button>
+        <button type="button" class="btn btn-danger" onclick="window.location.href='{{ request_path }}'">
+            Clear <i class="bi bi-x-circle"></i>
+        </button>
+    </div>
+</form>

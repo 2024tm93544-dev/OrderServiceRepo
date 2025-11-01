@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Orders</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'ordersapp/css/style.css' %}">
+</head>
+<body>
+<div class="container mt-4">
+    <h1 class="mb-2">My Orders</h1>
+    <h5 class="text-muted mb-4">Order History</h5>
+
+    {% include 'ordersapp/order_filters.html' %}
+
+    {% if orders %}
+        {% regroup orders by created_at.date as orders_by_date %}
+
+        {% for date_group in orders_by_date %}
+            <h4 class="mt-4">{{ date_group.grouper|date:"d M Y" }}</h4>
+            <div class="row">
+                {% for order in date_group.list %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card shadow-sm h-100 border-0">
+                            <div class="card-body">
+
+                                <h6 class="mb-2"><strong>Order ID:</strong> {{ order.order_id }}</h6>
+
+                                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                                    <div>
+                                        <strong>Status:</strong>
+                                        <span class="badge 
+                                            {% if order.order_status == 'CONFIRMED' %}bg-success
+                                            {% elif order.order_status == 'CANCELLED' %}bg-danger
+                                            {% else %}bg-warning{% endif %}">
+                                            {{ order.order_status }}
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <strong>Payment:</strong>
+                                        <span class="badge 
+                                            {% if order.payment_status == 'PAID' %}bg-success
+                                            {% elif order.payment_status == 'FAILED' %}bg-danger
+                                            {% else %}bg-warning{% endif %}">
+                                            {{ order.payment_status }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Shipping info (separate external data) -->
+                                    {% for ship in shipping_qs %}
+                                        {% if ship.order_id == order.order_id %}
+                                            <div>
+                                                <strong>Shipping:</strong>
+                                                <span class="badge 
+                                                    {% if ship.shipping_status == 'Delivered' %}bg-success
+                                                    {% elif ship.shipping_status == 'Failed' %}bg-danger
+                                                    {% elif ship.shipping_status == 'Cancelled' or ship.shipping_status == 'Returned' %}bg-danger
+                                                    {% elif ship.shipping_status == 'Shipped' %}bg-primary
+                                                    {% elif ship.shipping_status == 'Pending' %}bg-warning
+                                                    {% else %}bg-light text-dark{% endif %}">
+                                                    {{ ship.shipping_status|default:"Unknown" }}
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Items table -->
+                                <table class="table table-sm table-bordered mb-3">
+                                    <thead>
+                                        <tr class="table-dark">
+                                            <th>Product ID</th>
+                                            <th>SKU</th>
+                                            <th>Qty</th>
+                                            <th>Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in order.items.all %}
+                                            <tr>
+                                                <td>{{ item.product_id }}</td>
+                                                <td>{{ item.sku }}</td>
+                                                <td>{{ item.quantity }}</td>
+                                                <td>${{ item.unit_price }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+
+                                <p class="fw-bold text-end mb-1">Total: ${{ order.total_calculated }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                {% if orders.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="{{ request_path }}?page={{ orders.previous_page_number }}{% if query_without_page %}&{{ query_without_page }}{% endif %}">
+                            Previous
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in orders.paginator.page_range %}
+                    <li class="page-item {% if orders.number == num %}active{% endif %}">
+                        <a class="page-link"
+                           href="{{ request_path }}?page={{ num }}{% if query_without_page %}&{{ query_without_page }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% endfor %}
+
+                {% if orders.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="{{ request_path }}?page={{ orders.next_page_number }}{% if query_without_page %}&{{ query_without_page }}{% endif %}">
+                            Next
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+    {% else %}
+        <div class="alert alert-warning mt-3">No orders found.</div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
