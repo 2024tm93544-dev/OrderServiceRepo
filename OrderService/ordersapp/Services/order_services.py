@@ -8,14 +8,19 @@ class OrderService:
     TAX_PERCENT = Decimal('0.05')     # 5% tax
 
     @staticmethod
-    def calculate_order_total(items_data):
+    def calculate_order_total(order_or_items):
         """
-        Calculate total amount: subtotal + tax + shipping
+        Calculate the total price from either:
+        - an Order instance (with related items), or
+        - a list of item dicts [{'unit_price': X, 'quantity': Y}, ...]
         """
-        subtotal = sum(Decimal(item['unit_price']) * int(item['quantity']) for item in items_data)
-        tax = (subtotal * OrderService.TAX_PERCENT).quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
-        total = (subtotal + tax + OrderService.SHIPPING_COST).quantize(Decimal('0.01'), rounding=ROUND_HALF_EVEN)
-        return total
+        if hasattr(order_or_items, "items"):
+            # Case: an Order model instance
+            items = order_or_items.items.all()
+            return sum(i.unit_price * i.quantity for i in items)
+        else:
+            # Case: direct list of item dicts
+            return sum(i["unit_price"] * i["quantity"] for i in order_or_items)
     
     @staticmethod
     def get_order_data(order_id):

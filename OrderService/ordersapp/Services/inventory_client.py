@@ -24,7 +24,14 @@ def reserve_inventory(order_id, items):
     }
 
     try:
-        response = requests.post(f"{INVENTORY_SERVICE_URL}/reserve/", json=payload, timeout=5)
+        headers = {"Idempotency-Key": str(order_id)}
+        response = requests.post(
+            f"{INVENTORY_SERVICE_URL}/reserve/",
+            json=payload,
+            headers=headers,
+            timeout=5
+        )
+
         if response.status_code == 200:
             return True
         return False
@@ -39,7 +46,8 @@ def release_inventory(order_id, items):
     items: list of OrderItem instances or dicts with 'product_id' and 'quantity'
     """
     if MOCK_INVENTORY:
-        print("[InventoryClient] Mock mode ON – reservation always succeeds.")
+        print("[InventoryClient] Mock mode ON – release always succeeds.")
+
         return True
     payload = {
         "order_id": order_id,
@@ -62,7 +70,10 @@ def release_inventory(order_id, items):
         response = requests.post(f"{INVENTORY_SERVICE_URL}/release/", json=payload, timeout=5)
         if response.status_code != 200:
             print(f"[InventoryClient] Failed to release inventory for order {order_id}")
+            return False
+        return True
     except requests.exceptions.RequestException as e:
         print(f"[InventoryClient] Release failed: {e}")
+        return False
 
 

@@ -12,15 +12,17 @@ python-dotenv
 drf-yasg>=1.21.6
 
 # --- HTTP requests ---
-requests
+requests>=2.32.0
 
 # --- JWT Authentication ---
 PyJWT>=2.8.0
 djangorestframework-simplejwt>=5.3.1
 
 # --- Prometheus metrics for Django ---
-# Allows exposing /metrics endpoint for Prometheus to scrape
-django-prometheus
+django-prometheus>=2.3.1
 
-gunicorn
+# --- Web server for production ---
+gunicorn>=21.2.0
 
+# --- Django utilities ---
+django-extensions>=3.2.3

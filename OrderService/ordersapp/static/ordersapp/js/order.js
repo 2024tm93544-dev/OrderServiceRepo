@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const selects = document.querySelectorAll(".form-floating select");
 
+    // Highlight selects that have a value
     selects.forEach(select => {
-        // Add or remove 'has-value' class based on current value
         const update = () => {
             if (select.value) {
                 select.classList.add("has-value");
@@ -12,6 +12,16 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         select.addEventListener("change", update);
-        update(); // initialize
+        update(); // Initial update on page load
     });
+
+    // Auto-submit the form when any dropdown changes
+    const form = document.getElementById("order-filters-form");
+    if (form) {
+        document.querySelectorAll("#order-filters-form select").forEach(select => {
+            select.addEventListener("change", () => {
+                form.submit();
+            });
+        });
+    }
 });

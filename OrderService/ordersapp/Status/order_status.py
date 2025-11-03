@@ -4,7 +4,7 @@ class OrderStatus(Enum):
     PENDING = 'PENDING'
     CONFIRMED = 'CONFIRMED'
     CANCELLED = 'CANCELLED'
-    COMPLETED = 'COMPLETED'
+    DELIVERED = 'DELIVERED'
 
 class Direction(Enum):
     ASC = 'Ascending'
