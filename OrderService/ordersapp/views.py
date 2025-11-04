@@ -90,81 +90,80 @@ class OrderViewSet(viewsets.GenericViewSet):
         order.save()
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
-# -------------------------------------------------------------
-# UPDATE ORDER
-# -------------------------------------------------------------
-@swagger_auto_schema(
-    operation_summary="Update order status (payment/shipping/order)",
-    operation_description=(
-        "Updates only the order, payment, or shipping status of an existing order. "
-        "Cannot update delivered or cancelled orders. "
-        "Accepts partial updates for status transitions only."
-    ),
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            'order_status': openapi.Schema(type=openapi.TYPE_STRING, enum=[s.value for s in OrderStatus]),
-            'payment_status': openapi.Schema(type=openapi.TYPE_STRING, enum=[s.value for s in PaymentStatus]),
-            'shipping_status': openapi.Schema(type=openapi.TYPE_STRING, enum=[s.value for s in ShippingStatus]),
-        },
-        required=[],
-    ),
-    responses={
-        200: OrderSerializer,
-        400: "Invalid transition or not allowed to update."
-    }
-)
-@action(detail=True, methods=['patch'], url_path='update')
-def update_order(self, request, pk=None):
-    """
-    Update order status safely (Order/Payment/Shipping).
-    Does not change items or trigger external service actions.
-    """
-    order = self.get_object()
-
-    # 🔒 Block final state updates
-    if order.order_status in [OrderStatus.DELIVERED.value, OrderStatus.CANCELLED.value]:
-        return Response(
-            {"error": "Cannot update a delivered or cancelled order."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    new_order_status = request.data.get('order_status')
-    new_payment_status = request.data.get('payment_status')
-    new_shipping_status = request.data.get('shipping_status')
-
-    # 🧩 Validate payment status transitions
-    if new_payment_status:
-        if order.payment_status == PaymentStatus.FAILED.value and new_payment_status == PaymentStatus.PAID.value:
-            return Response(
-                {"error": "Cannot change payment from FAILED to PAID."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        order.payment_status = new_payment_status
-
-    # 🚚 Validate order status transitions
-    if new_order_status:
-        valid_transitions = {
-            OrderStatus.PENDING.value: [OrderStatus.CONFIRMED.value, OrderStatus.CANCELLED.value],
-            OrderStatus.CONFIRMED.value: [OrderStatus.SHIPPED.value, OrderStatus.CANCELLED.value],
-            OrderStatus.SHIPPED.value: [OrderStatus.DELIVERED.value],
+    # -------------------------------------------------------------
+    # UPDATE ORDER
+    # -------------------------------------------------------------
+    @swagger_auto_schema(
+        operation_summary="Update order status (payment/shipping/order)",
+        operation_description=(
+            "Updates only the order, payment, or shipping status of an existing order. "
+            "Cannot update delivered or cancelled orders. "
+            "Accepts partial updates for status transitions only."
+        ),
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'order_status': openapi.Schema(type=openapi.TYPE_STRING, enum=[s.value for s in OrderStatus]),
+                'payment_status': openapi.Schema(type=openapi.TYPE_STRING, enum=[s.value for s in PaymentStatus]),
+                'shipping_status': openapi.Schema(type=openapi.TYPE_STRING, enum=[s.value for s in ShippingStatus]),
+            },
+            required=[],
+        ),
+        responses={
+            200: OrderSerializer,
+            400: "Invalid transition or not allowed to update."
         }
+    )
+    @action(detail=True, methods=['patch'], url_path='update')
+    def update_order(self, request, pk=None):
+        """
+        Update order status safely (Order/Payment/Shipping).
+        Does not change items or trigger external service actions.
+        """
+        order = self.get_object()
 
-        current = order.order_status
-        if new_order_status not in valid_transitions.get(current, []):
+        # 🔒 Block final state updates
+        if order.order_status in [OrderStatus.DELIVERED.value, OrderStatus.CANCELLED.value]:
             return Response(
-                {"error": f"Invalid transition from {current} to {new_order_status}."},
+                {"error": "Cannot update a delivered or cancelled order."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        order.order_status = new_order_status
 
-    # 🧾 Shipping status tracking (no logic, just record)
-    if new_shipping_status:
-        order.shipping_status = new_shipping_status
+        new_order_status = request.data.get('order_status')
+        new_payment_status = request.data.get('payment_status')
+        new_shipping_status = request.data.get('shipping_status')
 
-    order.save()
-    return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
+        # 🧩 Validate payment status transitions
+        if new_payment_status:
+            if order.payment_status == PaymentStatus.FAILED.value and new_payment_status == PaymentStatus.PAID.value:
+                return Response(
+                    {"error": "Cannot change payment from FAILED to PAID."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            order.payment_status = new_payment_status
 
+        # 🚚 Validate order status transitions
+        if new_order_status:
+            valid_transitions = {
+                OrderStatus.PENDING.value: [OrderStatus.CONFIRMED.value, OrderStatus.CANCELLED.value],
+                OrderStatus.CONFIRMED.value: [OrderStatus.SHIPPED.value, OrderStatus.CANCELLED.value],
+                OrderStatus.SHIPPED.value: [OrderStatus.DELIVERED.value],
+            }
+
+            current = order.order_status
+            if new_order_status not in valid_transitions.get(current, []):
+                return Response(
+                    {"error": f"Invalid transition from {current} to {new_order_status}."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            order.order_status = new_order_status
+
+        # 🧾 Shipping status tracking
+        if new_shipping_status:
+            order.shipping_status = new_shipping_status
+
+        order.save()
+        return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
 
     # -------------------------------------------------------------
     # CANCEL ORDER
@@ -212,21 +211,7 @@ def get_order_details(request, pk=None):
 # -----------------------------------------------------------------
 # ORDER HISTORY (For UI view + pagination)
 # -----------------------------------------------------------------
-@swagger_auto_schema(
-    method='get',
-    operation_summary="Get Order History",
-    operation_description="Fetch order history for a customer with search, filter, and sorting options.",
-    manual_parameters=[
-        openapi.Parameter('search', openapi.IN_QUERY, description="Search orders", type=openapi.TYPE_STRING),
-        openapi.Parameter('status_filter', openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=[s.value for s in OrderStatus]),
-        openapi.Parameter('payment_filter', openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=[s.value for s in PaymentStatus]),
-        openapi.Parameter('shipping_filter', openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=[s.value for s in ShippingStatus]),
-        openapi.Parameter('sort_by', openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=[s.value for s in SortBy]),
-        openapi.Parameter('sort_dir', openapi.IN_QUERY, type=openapi.TYPE_STRING, enum=[s.value for s in Direction]),
-    ],
-    responses={200: "Orders retrieved successfully"}
-)
-@api_view(['GET'])
+@swagger_auto_schema(auto_schema=None)
 def order_history(request, customer_id):
     """Display customer order history with filters and pagination."""
     search = request.GET.get("search", "").strip()
@@ -269,15 +254,11 @@ def order_history(request, customer_id):
 
     # Sorting logic
     reverse = sort_dir == Direction.DESC.value
-
     if sort_by == SortBy.DATE.value:
         orders_with_shipping.sort(key=lambda o: o.created_at, reverse=reverse)
-
     elif sort_by == SortBy.CREATED_AT.value:
         orders_with_shipping.sort(key=lambda o: o.order_total, reverse=reverse)
-
     else:
-        # Default to newest first (by date)
         orders_with_shipping.sort(key=lambda o: o.created_at, reverse=True)
 
     # Pagination
@@ -303,7 +284,6 @@ def order_history(request, customer_id):
         "query_without_page": urlencode({k: v for k, v in request.GET.items() if k != "page" and v}),
     }
 
-    # Redirect cleanup
     redirect_url = OrderService.get_clean_redirect_url(request)
     if redirect_url:
         return redirect(redirect_url)
