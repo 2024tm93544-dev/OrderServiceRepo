@@ -1,22 +1,13 @@
 from django.db import models
 from django.utils import timezone
 from decimal import Decimal
+from .Status.order_status import OrderStatus
+from .Status.payment_status import PaymentStatus
 
 
 class Order(models.Model):
-    ORDER_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('CONFIRMED', 'Confirmed'),
-        ('CANCELLED', 'Cancelled'),
-        ('DELIVERED', 'Delivered'),
-    ]
-
-    PAYMENT_STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('PAID', 'Paid'),
-        ('FAILED', 'Failed'),
-        ('REFUNDED', 'Refunded'),
-    ]
+    ORDER_STATUS_CHOICES = [(s.value, s.name.title()) for s in OrderStatus]
+    PAYMENT_STATUS_CHOICES = [(s.value, s.name.title()) for s in PaymentStatus]
 
     order_id = models.BigAutoField(primary_key=True)
     customer_id = models.BigIntegerField()
