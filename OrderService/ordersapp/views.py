@@ -243,6 +243,11 @@ def order_history(request, customer_id):
     shipping_qs = get_shipping_queryset_for_customer(list(orders_qs))
     shipping_map = {s["order_id"]: s for s in shipping_qs}
 
+
+    for order in orders_qs:
+        order.calculated_total = OrderService.calculate_order_total(order)
+
+
     # Merge orders + shipping
     orders_with_shipping = []
     for order in orders_qs:
