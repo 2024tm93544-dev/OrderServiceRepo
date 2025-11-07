@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-env
+data:
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,order-service,order-service.local"
+  DEBUG: "True"
+  DB_NAME: "order_db"
+  DB_USER: "postgres"
+  DB_PASSWORD: "root"
+  DB_HOST: "order-db"
+  DB_PORT: "5432"
+  USE_MOCK_USER: "True"
+  USE_MOCK_INVENTORY: "True"
+  USE_MOCK_PAYMENT: "True"
+  USE_MOCK_SHIPPING: "True"

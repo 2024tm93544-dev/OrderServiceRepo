@@ -8,7 +8,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- Prometheus (local safe directory) ---
-PROMETHEUS_MULTIPROC_DIR = BASE_DIR / "prometheus_data"
+PROMETHEUS_MULTIPROC_DIR = os.getenv("PROMETHEUS_MULTIPROC_DIR", str(BASE_DIR / "prometheus_data"))
 os.makedirs(PROMETHEUS_MULTIPROC_DIR, exist_ok=True)
 
 # --- Security ---
@@ -86,7 +86,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'order_db'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }

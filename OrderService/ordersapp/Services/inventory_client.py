@@ -4,7 +4,7 @@ import os
 
 # Inventory service base URL (use env var for flexibility in Docker/K8s)
 INVENTORY_SERVICE_URL = getattr(settings, "INVENTORY_SERVICE_URL", "http://inventory:8001/v1/inventory")
-MOCK_INVENTORY = getattr(settings, "MOCK_INVENTORY", True)
+MOCK_INVENTORY = getattr(settings, "USE_MOCK_INVENTORY", True)
 
 def reserve_inventory(order_id, items):
     """

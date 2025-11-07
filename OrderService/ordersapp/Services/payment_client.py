@@ -6,7 +6,7 @@ from ..Status.payment_status import PaymentMethod
 
 # Base URL of the Payment Service
 PAYMENT_SERVICE_URL = getattr(settings, "PAYMENT_SERVICE_URL", "http://payment-service:8002/v1/payments")
-MOCK_PAYMENT = getattr(settings, "MOCK_PAYMENT", True)
+MOCK_PAYMENT = getattr(settings, "USE_MOCK_PAYMENT", True)
 
 
 def charge_payment(order_id, customer_id, amount):
