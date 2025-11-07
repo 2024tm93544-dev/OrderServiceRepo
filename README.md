@@ -1,264 +1,249 @@
-OrderService — Microservice for Order Management
+# OrderService — Microservice for Order Management
 
-A scalable Django REST Framework (DRF) microservice responsible for managing customer orders in a distributed e-commerce ecosystem.
-Exposes REST APIs for external consumption and communicates with other microservices (UserService, InventoryService, PaymentService, ShippingService) via internal service clients.
+OrderService is a **scalable Django REST Framework (DRF) microservice** responsible for managing customer orders in a distributed e-commerce ecosystem.  
+It exposes REST APIs and communicates with other microservices via API calls.
 
-Table of contents
+---
 
-Project Overview
+## Table of Contents
 
-Tech Stack
+- Project Overview 
+- Tech Stack 
+- Project Structure
+- Features
+- API Reference (Quick)
+- Environment & Configuration
+- Running the Service 
+- Kubernetes Deployment & Prometheus Setup
+- Database Schema
+- Contact 
 
-Repository Structure
+---
 
-Features
+## Project Overview
 
-API Reference (quick)
+OrderService handles the **entire order lifecycle**, including:
 
-Authentication
+- Creation of orders  
+- Listing orders  
+- Updating orders  
+- Getting order details  
+- Order history for each customer (shows payment, order, and shipping status)  
 
-Environment & Configuration
+---
 
-Running the service (Docker / Local)
+## Tech Stack
 
-Kubernetes Deployment
+| Component       | Technology / Version |
+|-----------------|-------------------|
+| Backend         | Django 5.0 + Django REST Framework 3.15 |
+| Python          | 3.11 |
+| Database        | PostgreSQL 15 |
+| Monitoring      | Prometheus (`/metrics`) |
+| Containerization| Docker + Docker Compose |
+| Orchestration   | Kubernetes (manifests under `k8s/`) |
+| Server          | Gunicorn WSGI |
 
-Monitoring
+---
 
-Development notes & conventions
-
-Troubleshooting
-
-Contributing
-
-Contact / Author
-
-License
-
-Project overview
-
-OrderService handles order lifecycle: creation, retrieval, filtering, searching, cancellation and tracking.
-Business logic and interservice communication are implemented in service clients under ordersapp/Services/. The service is JWT-protected and instrumented for Prometheus.
-
-Tech stack
-
-Backend: Django 5.0 + Django REST Framework 3.15
-
-Python: 3.11
-
-Database: PostgreSQL 15
-
-Auth: JWT via djangorestframework-simplejwt (tokens issued by UserService)
-
-Monitoring: Prometheus (/metrics)
-
-Containerization: Docker + Docker Compose
-
-Orchestration: Kubernetes (manifests under k8s/)
-
-Server: Gunicorn WSGI
-
-Repository structure
+# Project structure
+```
 OrderService/
-├── package.json
-├── ordersapp/
-│   ├── Status/
-│   │   ├── order_status.py
-│   │   ├── shipping_status.py
-│   │   └── payment_status.py
-│   ├── static/
-│   │   ├── css/style.css
-│   │   ├── images/
-│   │   └── js/order.js
-│   ├── Services/
-│   │   ├── inventory_client.py
-│   │   ├── order_services.py
-│   │   ├── payment_client.py
-│   │   └── shipping_client.py
-│   ├── templates/orderapp/
-│   │   ├── order_filters.html
-│   │   └── order_history.html
-│   ├── decorators.py
-│   ├── models.py
-│   ├── serializer.py
-│   ├── apps.py
-│   ├── admin.py
-│   └── views.py
-├── k8s/
-│   ├── ingress.yaml
-│   ├── orderservice.yaml
-│   ├── postgres.yaml
-│   └── prometheus.yml
-├── OrderService/          # Django project
-│   ├── __init__.py
-│   ├── asgi.py
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-├── .env
 ├── Dockerfile
 ├── docker-compose.yml
+├── prometheus.yml
 ├── requirements.txt
+├── init.sql
+├── seed_db.py
 ├── manage.py
-└── README.md
+├── .env                   # Your environment variables
+├── Seed Data/             # CSV seed files
+│   ├── eci_orders.csv
+│   └── eci_order_items.csv
+├── k8s/                   # Kubernetes deployment/config files
+│   ├── order-service-configmap.yaml
+│   ├── order-service-deployment.yaml
+│   ├── postgres-deployment.yaml
+│   ├── prometheus-configmap.yaml
+│   ├── prometheus-deployment.yaml
+│   └── promethues-service.yaml
+├── OrderService/          # Django project folder
+│   ├── settings.py
+│   └── urls.py
+└── ordersapp/             # Django app
+    ├── models.py
+    ├── serializer.py
+    ├── views.py
+    ├── Services/          # Service clients for inter-service communication
+    │   ├── inventory_client.py
+    │   ├── order_services.py
+    │   ├── payment_client.py
+    │   └── shipping_client.py
+    ├── Status/            # Enums for status management
+    │   ├── order_status.py
+    │   ├── payment_status.py
+    │   └── shipping_status.py
+    ├── static/            # Frontend assets
+    │   └── ordersapp/
+    │       ├── css/
+    │       ├── js/
+    │       └── Images/
+    └── templates/         # Django HTML templates
+```
+---
 
-Features
-Core responsibilities
+## Features
 
-Create, view, list and filter orders
+- Create, view, list, and filter orders  
+- Search orders by product, customer, or order ID  
+- Integrates with Inventory, Payment, and Shipping services via clients in `ordersapp/Services/`  
+- Prometheus metrics available at `/metrics`  
 
-Search orders by product, customer or order ID
+---
 
-Integrates with Inventory, Payment and Shipping services via clients in ordersapp/Services/
+## API Reference (Quick)
 
-JWT-protected endpoints (except health and docs)
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| GET    | [http://localhost:8001/v1/orders/](http://localhost:8001/v1/orders/) | List all orders | ✅ |
+| POST   | [http://localhost:8001/v1/orders/create/](http://localhost:8001/v1/orders/create/) | Create a new order | ✅ |
+| POST   | [http://localhost:8001/v1/orders/{id}/cancel/](http://localhost:8001/v1/orders/{id}/cancel/) | Cancel an order | ✅ |
+| GET    | [http://localhost:8001/v1/orders/{id}/details/](http://localhost:8001/v1/orders/{id}/details/) | Get order details | ✅ |
+| GET    | [http://localhost:8001/v1/orders/my-orders/{customer_id}/](http://localhost:8001/v1/orders/my-orders/{customer_id}/) | View order history (filters, sort, pagination) | ✅ |
+| GET    | [http://localhost:8001/health/](http://localhost:8001/health/) | Health check | ❌ |
+| GET    | [http://localhost:8001/orders-doc/](http://localhost:8001/orders-doc/) | Swagger API documentation | ❌ |
 
-Prometheus metrics at /metrics
+---
 
-Key API endpoints (base path: /v1/)
-Method	Path	Description	Auth
-GET	/v1/orders/	List all orders	✅
-POST	/v1/orders/create/	Create a new order	✅
-POST	/v1/orders/{id}/cancel/	Cancel an order	✅
-GET	/v1/orders/{id}/details/	Get order details	✅
-GET	/v1/orders/my-orders/{customer_id}/	View order history (filters, sort, pagination)	✅
-GET	/health/	Health check	❌
-GET	/orders-doc/	Swagger API docs	❌
-API examples
+## Environment Configuration
 
-List orders:
+---
 
-curl -X GET http://localhost:8001/v1/orders/ \
-  -H "Authorization: Bearer <your_jwt_token>" \
-  -H "Content-Type: application/json"
-
-
-Create order:
-
-curl -X POST http://localhost:8001/v1/orders/create/ \
-  -H "Authorization: Bearer <your_jwt_token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_id": 5,
-    "items": [
-      {"sku":"SKU123", "quantity":2, "unit_price":100.0},
-      {"sku":"SKU456", "quantity":1, "unit_price":50.0}
-    ]
-  }'
-
-
-View order history (example with query params):
-
-GET /v1/orders/my-orders/5/?status_filter=shipped&payment_filter=paid&sort_by=created_at&page=1&page_size=20
-
-Authentication
-
-All protected endpoints require a JWT in the Authorization header:
-
-Authorization: Bearer <your_jwt_token>
-
-
-Tokens are expected to be issued by UserService.
-
-Environment & configuration
-
-Create a .env in project root (example):
-
-DB_NAME=ordersdb
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_HOST=postgres
-DB_PORT=5432
-SECRET_KEY=a@w-vlr#hv&y68_n7f$a4$&+p&^cay-=pw0r^%xjs(w*0@_(5x)
-
-
-Add any service-specific environment variables (e.g., INVENTORY_SERVICE_URL, PAYMENT_SERVICE_URL, SHIPPING_SERVICE_URL, JWT public key/issuer settings) to .env or your deployment config.
-
-Running the service
-Docker (recommended for local dev)
-
-Build and run:
-
-docker compose up --build
-
-
-Check containers:
-
-docker ps
-
-
-Access:
-
-http://localhost:8001/
-
-Local (virtualenv)
-
-create venv & install:
-
+## Local Environment
+```bash
+# Create & activate virtual environment
 python -m venv venv
 source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 
+# Configure environment variables in .env
 
-configure .env (or env vars)
-
-run migrations & start:
-
+# Run migrations
 python manage.py migrate
+
+# Start development server
 python manage.py runserver 0.0.0.0:8001
 
-
-Or use Gunicorn (production-like):
-
+# Or use Gunicorn for production-like deployment
 gunicorn OrderService.wsgi:application --bind 0.0.0.0:8001
+```
 
-Kubernetes deployment
+## Docker (recommended)
 
-Manifests live under k8s/:
+```bash
+# Build and start containers (initial run)
+docker compose up --build
 
-postgres.yaml — Postgres StatefulSet / PVC / Service
+# Stop running containers gracefully
+docker compose down
 
-orderservice.yaml — Deployment / Service for orderservice
+# Stop containers but keep volumes
+docker compose down -v
 
-ingress.yaml — Ingress rules (if used)
+# Restart containers after stopping
+docker compose up
 
-prometheus.yml — Prometheus scrape config (snippet)
+# Rebuild containers after code changes
+docker compose up --build
 
-Deploy sequence (example):
+# Check running containers
+docker ps
 
-kubectl apply -f k8s/postgres.yaml
-kubectl apply -f k8s/orderservice.yaml
-kubectl apply -f k8s/ingress.yaml   # optional
+# Access the service in browser
+# http://localhost:8001/
+```
 
+## Kubernetes & Prometheus Basic Setup
 
-Check:
+```bash
+# Start Minikube cluster
+minikube start
 
+# Enable ingress (optional, if using ingress rules)
+minikube addons enable ingress
+
+# Deploy Postgres
+kubectl apply -f k8s/postgres-deployment.yaml
+
+# Deploy OrderService
+kubectl apply -f k8s/order-service-deployment.yaml
+
+# Deploy Prometheus
+kubectl apply -f k8s/prometheus-deployment.yaml
+
+# Apply ConfigMaps (if not included in deployments)
+kubectl apply -f k8s/order-service-configmap.yaml
+kubectl apply -f k8s/prometheus-configmap.yaml
+
+# Apply Prometheus Service
+kubectl apply -f k8s/promethues-sevice.yaml
+
+# Optional: Apply ingress rules
+# kubectl apply -f k8s/ingress.yaml
+
+# Check pods and services
 kubectl get pods
 kubectl get svc
 
-Monitoring
+# Access Minikube service in browser
+minikube service order-service   # Opens OrderService URL
+minikube service prometheus      # Opens Prometheus dashboard
 
-Expose /metrics for Prometheus. Example scrape config (add to Prometheus prometheus.yml):
+# To stop Minikube
+minikube stop
 
-scrape_configs:
-  - job_name: 'orderservice'
-    static_configs:
-      - targets: ['orderservice:8001']
-    metrics_path: '/metrics'
+# To delete Minikube cluster
+minikube delete
+```
+
+# Database Scehma
+```
+# Orders Table
+CREATE TABLE IF NOT EXISTS public.ordersapp_order
+(
+    order_id bigint NOT NULL DEFAULT nextval('ordersapp_order_order_id_seq'::regclass),
+    customer_id bigint NOT NULL,
+    order_status character varying(20) COLLATE pg_catalog."default" NOT NULL DEFAULT 'PENDING'::character varying,
+    payment_status character varying(20) COLLATE pg_catalog."default" NOT NULL DEFAULT 'PENDING'::character varying,
+    order_total numeric(10,2) NOT NULL DEFAULT 0.00,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ordersapp_order_pkey PRIMARY KEY (order_id)
+)
+# Order Items Table
+CREATE TABLE IF NOT EXISTS public.ordersapp_orderitem
+(
+    order_item_id bigint NOT NULL DEFAULT nextval('ordersapp_orderitem_order_item_id_seq'::regclass),
+    order_id bigint NOT NULL,
+    product_id bigint NOT NULL,
+    sku character varying(100) COLLATE pg_catalog."default" NOT NULL,
+    quantity integer NOT NULL DEFAULT 1,
+    unit_price numeric(10,2) NOT NULL DEFAULT 0.00,
+    CONSTRAINT ordersapp_orderitem_pkey PRIMARY KEY (order_item_id),
+    CONSTRAINT ordersapp_orderitem_order_id_fkey FOREIGN KEY (order_id)
+        REFERENCES public.ordersapp_order (order_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
+)
+```
 
 
-Access metrics:
+# Contact
 
-http://localhost:8001/metrics
+ - P Naveen Prabhath | 2024tm93544@wilp.bits-pilani.ac.in
 
-Development notes & conventions
 
-Business logic and interservice calls are in ordersapp/Services/ (e.g., inventory_client.py, payment_client.py). Prefer adding new interservice logic there.
 
-Enums for statuses are maintained under ordersapp/Status/. Use these enums for validation and serialization.
 
-Serializers in ordersapp/serializer.py contain the DRF serialization logic for orders.
 
-Views in ordersapp/views.py expose the endpoints (DRF viewsets or APIViews).
-
-Authentication decorator/helpers in ordersapp/decorators.py.
