@@ -34,8 +34,8 @@ urlpatterns = [
     path('health/', health_check, name='health-check'),
 
     # Prometheus Metrics
-    path('metrics/', include('django_prometheus.urls')),
+    path('', include('django_prometheus.urls')),
 
     # Root Endpoint
-    path('', root_view, name='root'),
+    path('home/', root_view, name='root'),
 ]
