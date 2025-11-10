@@ -27,7 +27,7 @@ def charge_payment(order_id, customer_id, amount):
 
     try:
         response = requests.post(f"{PAYMENT_SERVICE_URL}/charge/", json=payload, timeout=5)
-        if response.status_code == 200:
+        if response.status_code in (200, 201):
             print(f"[PaymentClient] Payment successful for Order {order_id}")
             return True
         else:

@@ -14,7 +14,7 @@ os.makedirs(PROMETHEUS_MULTIPROC_DIR, exist_ok=True)
 # --- Security ---
 SECRET_KEY = os.getenv('SECRET_KEY', 'a@w-vlr#hv&y68_n7f$a4$&+p&^cay-=pw0r^%xjs(w*0@_(5x)')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8001',

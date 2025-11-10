@@ -15,26 +15,24 @@ def reserve_inventory(order_id, items):
     if MOCK_INVENTORY:
         print("[InventoryClient] Mock mode ON – reservation always succeeds.")
         return True
-    payload = {
-        "order_id": order_id,
-        "items": [
-            {"product_id": item["product_id"], "quantity": item["quantity"]} 
+    payload = [
+            {"product_id": item["product_id"],"warehouse": "WH1", "quantity": item["quantity"]} 
             for item in items
         ]
-    }
 
     try:
         headers = {"Idempotency-Key": str(order_id)}
-        response = requests.post(
-            f"{INVENTORY_SERVICE_URL}/reserve/",
-            json=payload,
-            headers=headers,
-            timeout=5
-        )
+        for i in payload:
+            response = requests.post(
+                f"{INVENTORY_SERVICE_URL}/reserve/",
+                json=i,
+                headers=headers,
+                timeout=5
+            )   
 
-        if response.status_code == 200:
-            return True
-        return False
+            if response.status_code == 200:
+                return True
+            return False
     except requests.exceptions.RequestException as e:
         print(f"[InventoryClient] Reservation failed: {e}")
         return False

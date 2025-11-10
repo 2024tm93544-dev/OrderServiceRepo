@@ -12,8 +12,8 @@ class OrderService:
         """
         Calculate order total from items in DB + 5% tax + $50 shipping.
         """
-        items = order.items.all()
-        subtotal = sum(i.unit_price * i.quantity for i in items)
+        items = order
+        subtotal = sum(i["unit_price"] * i["quantity"] for i in items)
 
         total = subtotal * (1 + OrderService.TAX_PERCENT) + OrderService.SHIPPING_COST
         return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_EVEN)

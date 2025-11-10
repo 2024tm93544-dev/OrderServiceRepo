@@ -9,13 +9,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       # Persistent DB storage
       - db_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./seed_data:/app/seed_data
-
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -26,6 +23,7 @@ services:
   order-service:
     build: .
     container_name: order-service
+    image: order-service:latest
     env_file:
       - .env
     depends_on:
@@ -40,8 +38,11 @@ services:
       sh -c "
         python manage.py migrate &&
         python manage.py collectstatic --noinput &&
+        python seed_db.py &&
         python manage.py runserver 0.0.0.0:8001
       "
+  payment-service:
+    image: payment-service:latest
 
   prometheus:
     image: prom/prometheus:latest

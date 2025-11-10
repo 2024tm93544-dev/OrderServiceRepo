@@ -77,13 +77,28 @@ def create_shipment(order_id, customer_id):
         }
         return {"order_id": order_id, "status": status}
 
-    payload = {"order_id": order_id, "customer_id": customer_id}
+    # Real API payload — match Django Shipping model
+    now = datetime.utcnow().isoformat()
+    payload = {
+        "order_id": order_id,
+        "carrier": "BlueDart",
+        "tracking_no": f"TRK{order_id}",
+        "status": ShippingStatus.PENDING.value.upper(),
+        "shipped_at": now,
+        "delivered_at": now,
+        "created_at": now
+    }
+
     try:
         r = requests.post(f"{SHIPPING_URL}/create/", json=payload, timeout=5)
         if r.status_code == 201:
+            print(f"[ShippingClient] Shipment created successfully for Order {order_id}")
             return r.json()
-        return {"order_id": order_id, "status": ShippingStatus.UNKNOWN.value}
-    except requests.RequestException:
+        else:
+            print(f"[ShippingClient] Failed ({r.status_code}) → {r.text}")
+            return {"order_id": order_id, "status": ShippingStatus.UNKNOWN.value}
+    except requests.RequestException as e:
+        print(f"[ShippingClient] Exception: {e}")
         return {"order_id": order_id, "status": ShippingStatus.FAILED.value}
 
 

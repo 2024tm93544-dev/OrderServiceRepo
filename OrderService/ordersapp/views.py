@@ -21,6 +21,7 @@ from .Services.shipping_client import get_shipping_queryset_for_customer, create
 from .Status.order_status import OrderStatus, SortBy, Direction
 from .Status.payment_status import PaymentStatus
 from .Status.shipping_status import ShippingStatus
+from .Services.notification_client import send_notification
 
 
 # --- ViewSet for managing Orders (CRUD operations) ---
@@ -88,6 +89,10 @@ class OrderViewSet(viewsets.GenericViewSet):
         order.order_status = OrderStatus.CONFIRMED.value
         order.payment_status = PaymentStatus.PAID.value
         order.save()
+        send_notification("ORDER_CREATED", {
+          "order_id": order.order_id,
+          "order_total": str(order.order_total)
+        })
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
     # -------------------------------------------------------------
